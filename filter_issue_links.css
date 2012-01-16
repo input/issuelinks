@@ -1,0 +1,35 @@
+/* issue links */
+
+.issue-status-info {
+	padding: 2px 4px;
+	border-radius: 4px;
+}
+
+.issue-status-active {
+	background: #f9f9f9;
+}
+
+.issue-status-needswork {
+	background: #ffece8;
+}
+
+.issue-status-needsreview {
+	background: #ffffdd;
+}
+
+.issue-status-patchtobeported {
+	background: #f1ffe8;
+}
+
+.issue-status-fixed {
+	background: #d7ffd8;
+}
+
+.issue-status-postponed {
+	background: #eff1fe;
+}
+
+.issue-status-closed {
+	text-decoration: line-through;
+	background: #fddddd;
+}

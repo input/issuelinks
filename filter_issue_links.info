@@ -1,0 +1,6 @@
+name = Issue Links Filter
+description = Creates an 'Issue links' text filter.
+core = 7.x
+files[] = filter_issue_links.module
+stylesheets[all][] = filter_issue_links.css
+

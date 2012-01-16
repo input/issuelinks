@@ -1,0 +1,115 @@
+<?php
+
+/**
+ * @file
+ * Defines an 'Issue links' text filter.
+ *
+ * This module creates a modified version of the functionality 
+ * found on drupal.org for project issues whereby users can link 
+ * from one project issue to another in a project issue's node 
+ * or comment body simply using [#1234] (or [#1234-2] for comments).
+ *
+ * References to issues in the form of [#1234] (or [#1234-2] for comments)
+ * automatically turn into links, with the title of the issue appended.
+ * The status of the issue is shown on hover.
+ */
+
+/**
+ * Implementation of hook_filter_info().
+ */
+function filter_issue_links_filter_info() {
+  $filters['filter_issue_links'] = array(
+    'title' => t('Issue links'), 
+    'description' => t('Turns issue numbers (e.g. [#12345]) into links.'),
+    'process callback' => '_filter_issue_links_filter_issue_links_process', 
+    'tips callback' => '_filter_issue_links_filter_issue_links_tips',
+  );
+  return $filters;
+}
+
+/**
+ * Implementation of hook_filter_FILTER_process().
+ */
+function _filter_issue_links_filter_issue_links_process($text, $filter, $format, $langcode, $cache, $cache_id) {
+  // Regex pattern to find [#1234] etc.
+  $regex = '(?:(?<!\w)\[#\d+(?:-\d+)?(@)?\](?!\w))|<pre>.*?<\/pre>|<code>.*?<\/code>|<a(?:[^>"\']|"[^"]*"|\'[^\']*\')*>.*?<\/a>';
+  // Pass matches to filter_issue_links_filter_callback
+  $text = preg_replace_callback("/$regex/", 'filter_issue_links_filter_callback', $text);
+  // Return filtered text
+  return $text;
+}
+
+/**
+ * Process matches.
+ *
+ * @param $matches
+ *   An array of matched elements found in $text.
+ *   e.g. [#1234]
+ */
+function filter_issue_links_filter_callback($matches) {
+  $parts = array();
+  if (preg_match('/^\[#(\d+)(?:-(\d+))?(@)?\]$/', $matches[0], $parts)) {
+    // e.g. $parts[0] = [#1234], $parts[1] = 1234 (nid), $parts[2] = 1 (comment id);
+    $nid = $parts[1];
+    $node = node_load($nid);
+    if (is_object($node) && node_access('view', $node) && $node->type == 'issue') {
+      // If a comment id is present
+      if (isset($parts[2])) {
+        $comment_id = $parts[2];
+        // TODO:
+        // Check that the comment actually exists for the node
+
+        // Link to the comment 
+        $html = filter_issue_links_issue_link($node, $comment_id);
+        return $html;
+      }
+      // If no valid comment id, link to the node
+      $html = filter_issue_links_issue_link($node, NULL);
+      return $html;
+    }
+  }
+  // If we haven't already returned a replacement, return the original text.
+  return $matches[0];
+
+}
+
+/**
+ * Theme Issue links.
+ *
+ * @param $node
+ *   The issue node object to be linked.
+ * @param $comment_id
+ *   The comment id to be appended to the link, optional.
+ * @param $comment_number
+ *   The comment's number, as visible to users, optional.
+ */
+function filter_issue_links_issue_link($node, $comment_id = NULL) {
+  $path = "node/$node->nid";
+  $characters = array(" ", "(", ")");
+  $status = str_replace($characters, "", $node->field_status['und'][0]['value']);
+  $attributes = array('title' => t('Status: !status', array('!status' => $status)));
+
+  if (isset($comment_id)) {
+    $title = "#$node->nid: $node->title - Comment #$comment_id";
+    $link = l($title, $path, array('attributes' => $attributes, 'fragment' => "comment-$comment_id"));
+  }
+  else {
+    $title = "#$node->nid: $node->title";
+    $link = l($title, $path, array('attributes' => $attributes));
+  }
+
+  $output = '<span class="issue-status-' . $status . ' issue-status-info">' . $link . '</span>';
+  return $output;
+}
+
+/**
+ * Implementation of hook_filter_FILTER_tips().
+ */
+function _filter_issue_links_filter_issue_links_tips($filter, $format, $long) {
+  if ($long) {
+    return t("References to issues in the form of [#1234] (or [#1234-2] for comments) turn into links automatically, with the title of the issue appended. The status of the issue is shown on hover.");
+  }
+  else {
+    return t('Issue numbers (e.g. [#1234]) turn into links automatically.');
+  }
+}
