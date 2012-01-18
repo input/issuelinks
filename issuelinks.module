@@ -17,12 +17,12 @@
 /**
  * Implementation of hook_filter_info().
  */
-function filter_issue_links_filter_info() {
-  $filters['filter_issue_links'] = array(
+function issuelinks_filter_info() {
+  $filters['filter_issuelinks'] = array(
     'title' => t('Issue links'), 
     'description' => t('Turns issue numbers (e.g. [#12345]) into links.'),
-    'process callback' => '_filter_issue_links_filter_issue_links_process', 
-    'tips callback' => '_filter_issue_links_filter_issue_links_tips',
+    'process callback' => '_issuelinks_filter_issuelinks_process', 
+    'tips callback' => '_issuelinks_filter_issuelinks_tips',
   );
   return $filters;
 }
@@ -30,11 +30,11 @@ function filter_issue_links_filter_info() {
 /**
  * Implementation of hook_filter_FILTER_process().
  */
-function _filter_issue_links_filter_issue_links_process($text, $filter, $format, $langcode, $cache, $cache_id) {
+function _issuelinks_filter_issuelinks_process($text, $filter, $format, $langcode, $cache, $cache_id) {
   // Regex pattern to find [#1234] etc.
   $regex = '(?:(?<!\w)\[#\d+(?:-\d+)?(@)?\](?!\w))|<pre>.*?<\/pre>|<code>.*?<\/code>|<a(?:[^>"\']|"[^"]*"|\'[^\']*\')*>.*?<\/a>';
   // Pass matches to filter_issue_links_filter_callback
-  $text = preg_replace_callback("/$regex/", 'filter_issue_links_filter_callback', $text);
+  $text = preg_replace_callback("/$regex/", 'issuelinks_filter_callback', $text);
   // Return filtered text
   return $text;
 }
@@ -46,7 +46,7 @@ function _filter_issue_links_filter_issue_links_process($text, $filter, $format,
  *   An array of matched elements found in $text.
  *   e.g. [#1234]
  */
-function filter_issue_links_filter_callback($matches) {
+function issuelinks_filter_callback($matches) {
   $parts = array();
   if (preg_match('/^\[#(\d+)(?:-(\d+))?(@)?\]$/', $matches[0], $parts)) {
     // e.g. $parts[0] = [#1234], $parts[1] = 1234 (nid), $parts[2] = 1 (comment id);
@@ -60,11 +60,11 @@ function filter_issue_links_filter_callback($matches) {
         // Check that the comment actually exists for the node
 
         // Link to the comment 
-        $html = filter_issue_links_issue_link($node, $comment_id);
+        $html = issuelinks_issue_link($node, $comment_id);
         return $html;
       }
       // If no valid comment id, link to the node
-      $html = filter_issue_links_issue_link($node, NULL);
+      $html = issuelinks_issue_link($node, NULL);
       return $html;
     }
   }
@@ -83,7 +83,7 @@ function filter_issue_links_filter_callback($matches) {
  * @param $comment_number
  *   The comment's number, as visible to users, optional.
  */
-function filter_issue_links_issue_link($node, $comment_id = NULL) {
+function issuelinks_issue_link($node, $comment_id = NULL) {
   $path = "node/$node->nid";
   $characters = array(" ", "(", ")");
   $status = str_replace($characters, "", $node->field_status['und'][0]['value']);
@@ -105,7 +105,7 @@ function filter_issue_links_issue_link($node, $comment_id = NULL) {
 /**
  * Implementation of hook_filter_FILTER_tips().
  */
-function _filter_issue_links_filter_issue_links_tips($filter, $format, $long) {
+function _issuelinks_filter_issuelinks_tips($filter, $format, $long) {
   if ($long) {
     return t("References to issues in the form of [#1234] (or [#1234-2] for comments) turn into links automatically, with the title of the issue appended. The status of the issue is shown on hover.");
   }
